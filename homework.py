@@ -32,9 +32,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-error_sent_messages = []
-
-
 class APIAnswerError(Exception):
     """Кастомная ошибка при незапланированной работе API."""
 
@@ -73,6 +70,7 @@ def check_response(response):
     """Проверяет полученный ответ на корректность."""
     try:
         homeworks_list = response['homeworks']
+        print(len(homeworks_list))
     except KeyError as e:
         msg = f'Ошибка доступа по ключу homeworks: {e}'
         logger.error(msg)
@@ -82,7 +80,7 @@ def check_response(response):
         logger.error(msg)
         raise Exception(msg)
     if len(homeworks_list) == 0:
-        msg = 'За последнее время нет домашек'
+        msg = 'За последнее время нет изменения домашки'
         logger.error(msg)
         raise Exception(msg)
     if not isinstance(homeworks_list, list):
@@ -121,7 +119,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0
+    current_timestamp = int(time.time())
     check_result = check_tokens()
     if check_result is False:
         message = 'Проблемы с переменными окружения'
@@ -131,11 +129,12 @@ def main():
     while True:
         try:
             response = get_api_answer(current_timestamp)
+            print(response)
             if 'current_date' in response:
                 current_timestamp = response['current_date']
             homework = check_response(response)
             if homework is not None:
-                message = parse_status(homework)
+                message = parse_status(*homework)
                 if message is not None:
                     send_message(bot, message)
             time.sleep(RETRY_TIME)
