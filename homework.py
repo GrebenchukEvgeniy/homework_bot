@@ -52,7 +52,7 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Запрос к единственному эндпоинту API-сервиса."""
-    timestamp = current_timestamp - 604800
+    timestamp = current_timestamp 
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
