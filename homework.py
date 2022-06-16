@@ -121,7 +121,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = 0
     check_result = check_tokens()
     if check_result is False:
         message = 'Проблемы с переменными окружения'
