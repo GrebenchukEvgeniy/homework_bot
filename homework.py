@@ -52,7 +52,7 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Запрос к единственному эндпоинту API-сервиса."""
-    timestamp = current_timestamp
+    timestamp = current_timestamp - 604800
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
@@ -121,7 +121,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0
+    current_timestamp = int(time.time())
     check_result = check_tokens()
     if check_result is False:
         message = 'Проблемы с переменными окружения'
