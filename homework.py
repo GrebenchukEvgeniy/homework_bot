@@ -27,21 +27,21 @@ HOMEWORK_VERDICTS = {
 }
 
 
-logging.basicConfig(
-    # handlers=[logging.StreamHandler()],
-    level=logging.INFO,
-    filename='main.log',
-    filemode='w',
-    format='%(asctime)s, %(levelname)s, %(message)s',
-)
 logger = logging.getLogger(__name__)
+fileHandler = logging.FileHandler("main.log", 'w')
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
+streamHandler.setFormatter(formatter)
+fileHandler.setFormatter(formatter)
+logger.addHandler(streamHandler)
+logger.addHandler(fileHandler)
 
 
 def send_message(bot, message):
     """Отправляет сообщения."""
     try:
-        bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info(f'Отправлено сообщение: "{message}"')
+        bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError as error:
         message = f'Cбой отправки сообщения, ошибка: {error}'
         raise exceptions.APIAnswerError(message)
@@ -69,10 +69,11 @@ def check_response(response):
     if not isinstance(response, dict):
         msg = 'Ответ API не словарь'
         raise TypeError(msg)
-    homeworks_list = response['homeworks']
     if 'homeworks' not in response:
         msg = 'Ошибка доступа по ключу homeworks'
         raise KeyError(msg)
+    else:
+        homeworks_list = response['homeworks']
     if homeworks_list is None:
         msg = 'В ответе API нет словаря с ДЗ'
         raise exceptions.CheckResponseException(msg)
@@ -112,12 +113,12 @@ def main():
     """Основная логика работы бота."""
     current_timestamp = int(time.time())
     check_result = check_tokens()
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     if not check_result:
         message = 'Проблемы с переменными окружения'
         logger.critical(message)
         raise sys.exit(message)
-
+    else:
+        bot = telegram.Bot(token=TELEGRAM_TOKEN)
     while True:
         try:
             response = get_api_answer(current_timestamp)
