@@ -28,9 +28,11 @@ HOMEWORK_VERDICTS = {
 
 
 logging.basicConfig(
-    handlers=[logging.StreamHandler()],
+    # handlers=[logging.StreamHandler()],
     level=logging.INFO,
-    format='%(asctime)s, %(levelname)s, %(message)s'
+    filename='main.log',
+    filemode='w',
+    format='%(asctime)s, %(levelname)s, %(message)s',
 )
 logger = logging.getLogger(__name__)
 
@@ -70,19 +72,15 @@ def check_response(response):
     homeworks_list = response['homeworks']
     if 'homeworks' not in response:
         msg = 'Ошибка доступа по ключу homeworks'
-        logger.error(msg)
         raise KeyError(msg)
     if homeworks_list is None:
         msg = 'В ответе API нет словаря с ДЗ'
-        logger.error(msg)
         raise exceptions.CheckResponseException(msg)
     if len(homeworks_list) == 0:
         msg = 'За последнее время нет изменения домашки'
-        logger.error(msg)
         raise exceptions.CheckResponseException(msg)
     if not isinstance(homeworks_list, list):
         msg = 'В ответе API домашки представлены не списком'
-        logger.error(msg)
         raise exceptions.CheckResponseException(msg)
     return homeworks_list
 
@@ -92,22 +90,16 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     if 'homework_name' not in homework:
         msg = 'Ошибка доступа по ключу homework_name'
-        logger.error(msg)
         raise KeyError(msg)
     homework_status = homework.get('status')
     if 'status' not in homework:
         msg = 'Ошибка доступа по ключу status'
-        logger.error(msg)
         raise exceptions.CheckResponseException(msg)
-    try:
-        if homework_status in HOMEWORK_VERDICTS:
-            verdict = HOMEWORK_VERDICTS.get(homework_status)
-        else:
-            message = 'Статус ответа не известен'
-            raise exceptions.CheckResponseException(message)
-    except KeyError:
-        msg = 'Неизвестный статус домашки'
-        raise exceptions.CheckResponseException(msg)
+    if homework_status in HOMEWORK_VERDICTS:
+        verdict = HOMEWORK_VERDICTS.get(homework_status)
+    else:
+        message = f'Статус ответа {homework_status}'
+        raise exceptions.CheckResponseException(message)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -118,9 +110,9 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     check_result = check_tokens()
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     if not check_result:
         message = 'Проблемы с переменными окружения'
         logger.critical(message)
@@ -132,10 +124,9 @@ def main():
             if 'current_date' in response:
                 current_timestamp = response['current_date']
             homework = check_response(response)
-            if homework is not None:
-                message = parse_status(*homework)
-                if message is not None:
-                    send_message(bot, message)
+            message = parse_status(*homework)
+            if message is not None:
+                send_message(bot, message)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.exception(message)
